@@ -1,0 +1,1 @@
+recursive-include nepse_scrapper/app/core *.wasm
