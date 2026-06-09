@@ -157,6 +157,7 @@ async def clear_cache():
 
 def main():
     import sys
+
     import uvicorn
     print("\n┌──────────────────────────────────────────────┐", file=sys.stderr)
     print("│           nepseman-api v2.0.0                │", file=sys.stderr)
