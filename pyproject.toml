@@ -25,7 +25,7 @@ dependencies = [
 ]
 
 [project.scripts]
-nepseman-api = "app.main:start"         
+nepseman-api = "app.main:main"         
 
 [tool.setuptools.packages.find]
 where = ["."]
