@@ -25,11 +25,11 @@ dependencies = [
 ]
 
 [project.scripts]
-nepseman-api = "app.main:start"          ← changed
+nepseman-api = "app.main:start"         
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["app*"]                        ← added
+include = ["app*"]                       
 
 [tool.setuptools.package-data]
 "*" = ["*.wasm"]
