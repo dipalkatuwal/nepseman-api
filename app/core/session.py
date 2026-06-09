@@ -48,11 +48,11 @@ class NepseSession:
         # nepalstock.com.np serves an incomplete certificate chain that fails
         # SSL verification. verify=False bypasses this at the httpx level.
         self._client = httpx.AsyncClient(
-    verify=False,
-    headers={**_DEFAULT_HEADERS, "Referer": f"{self.BASE_URL}/"},
-    timeout=httpx.Timeout(15.0, connect=5.0),
-    transport=httpx.AsyncHTTPTransport(retries=3, verify=False),
-)
+            verify=False,
+            headers={**_DEFAULT_HEADERS, "Referer": f"{self.BASE_URL}/"},
+            timeout=httpx.Timeout(15.0, connect=5.0),
+            transport=httpx.AsyncHTTPTransport(retries=3, verify=False),
+    )
 
     # ── private helpers ────────────────────────────────────────────────────────
 
