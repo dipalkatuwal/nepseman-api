@@ -12,8 +12,8 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
-from app.db.database import get_db
 from app.db import repository as repo
+from app.db.database import get_db
 from app.services import nepse as svc
 
 logger = logging.getLogger(__name__)

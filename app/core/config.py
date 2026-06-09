@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_HEALTH: str = "200/minute"
 
     DATABASE_URL: str = "postgresql+asyncpg://nepse:nepse@localhost:5432/nepse_db"
-    
+
     class Config:
         env_file = ".env"
 

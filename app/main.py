@@ -74,7 +74,7 @@ app = FastAPI(
         "NEPSE library.\n\n"
         "⚠️ **Unofficial & unsupported** — not affiliated with NEPSE or "
         "nepalstock.com.np. Use at your own risk.\n\n"
-        
+
     ),
     version="2.0.0",
     lifespan=lifespan,
