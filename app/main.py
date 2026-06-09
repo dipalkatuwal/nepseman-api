@@ -1,7 +1,7 @@
 """
 main.py
 -------
-FastAPI application entry point.
+nepseman-api — FastAPI application entry point.
 
 Run with:  uvicorn app.main:app --reload --port 8000
 """
@@ -41,7 +41,6 @@ _startup_time = time.time()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🚀  nepseman-api starting up…")
-    # Warm up session + symbol map on startup
     try:
         from app.core.session import get_session
         from app.core.symbols import all_symbols
@@ -51,7 +50,6 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"⚠️  Warm-up failed (geo-block?): {e}")
     yield
-    # Shutdown
     try:
         from app.core.session import _session
         if _session:
@@ -65,7 +63,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="nepseman-api",
     description=(
-       "**nepseman-api** — Unofficial, reverse-engineered REST + WebSocket API "
+        "**nepseman-api** — Unofficial, reverse-engineered REST + WebSocket API "
         "for NEPSE (Nepal Stock Exchange) market data.\n\n"
         "Scrapes and exposes live prices, indices, floor sheets, market depth, "
         "and security data by authenticating directly against nepalstock.com.np.\n\n"
@@ -73,10 +71,9 @@ app = FastAPI(
         "payload signing — all implemented from scratch without any third-party "
         "NEPSE library.\n\n"
         "⚠️ **Unofficial & unsupported** — not affiliated with NEPSE or "
-        "nepalstock.com.np. Use at your own risk.\n\n"
-
+        "nepalstock.com.np. Use at your own risk."
     ),
-    version="2.0.0",
+    version="1.0.0",
     lifespan=lifespan,
 )
 
@@ -91,13 +88,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Cache-Control middleware — adds cache headers to all API responses
+# Cache-Control middleware
 @app.middleware("http")
 async def add_cache_headers(request: Request, call_next):
     response = await call_next(request)
     path = request.url.path
     if path.startswith("/api/v1"):
-        # Live endpoints get short cache; stable endpoints longer
         if any(x in path for x in ["/live", "/depth", "/status", "/floorsheet"]):
             response.headers["Cache-Control"] = f"public, max-age={settings.CACHE_TTL_LIVE}"
         elif any(x in path for x in ["/companies", "/list", "/sectors"]):
@@ -115,19 +111,20 @@ app.include_router(prices.router,     prefix=PREFIX)
 app.include_router(indices.router,    prefix=PREFIX)
 app.include_router(securities.router, prefix=PREFIX)
 app.include_router(meta.router,       prefix=PREFIX)
-app.include_router(ws_router)  # WebSocket at /ws (no prefix)
+app.include_router(ws_router)
 
 # ── system endpoints ──────────────────────────────────────────────────────────
 
 @app.get("/", tags=["System"])
 def root():
     return {
-        "service": "nepseman-api",
-        "version": "2.0.0",
-        "docs":    "/docs",
-        "redoc":   "/redoc",
-        "ws":      "/ws",
-        "status":  "ok",
+        "service":     "nepseman-api",
+        "description": "Unofficial reverse-engineered NEPSE data API",
+        "version":     "1.0.0",
+        "docs":        "/docs",
+        "redoc":       "/redoc",
+        "ws":          "/ws",
+        "status":      "ok",
     }
 
 
@@ -142,7 +139,8 @@ async def health():
 
     return {
         "status":         "ok",
-        "version":        "2.0.0",
+        "service":        "nepseman-api",
+        "version":        "1.0.0",
         "uptime_seconds": uptime_seconds,
         "last_sync_at":   last_sync,
         "cache":          cache.stats(),
@@ -155,7 +153,20 @@ async def clear_cache():
     return {"cleared": True}
 
 
-def start():
+# ── entry point ───────────────────────────────────────────────────────────────
+
+def main():
     import uvicorn
+    print("\n┌─────────────────────────────────────────┐")
+    print("│           nepseman-api v1.0.0           │")
+    print("│  Unofficial reverse-engineered NEPSE API │")
+    print("├─────────────────────────────────────────┤")
+    print("│  📖  Docs    →  http://localhost:8000/docs  │")
+    print("│  🔌  API     →  http://localhost:8000/api/v1/  │")
+    print("│  ❤️   Health  →  http://localhost:8000/health  │")
+    print("└─────────────────────────────────────────┘\n")
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=False)
 
+
+if __name__ == "__main__":
+    main()
