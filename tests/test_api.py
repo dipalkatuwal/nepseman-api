@@ -9,6 +9,8 @@ Strategy
 - The entire ``app.services.nepse`` module is patched via unittest.mock so
   no Nepal IP, no WASM execution, and no network access is required.
 - Each test group mirrors one router prefix.
+- Every JSON response is wrapped in {"success": bool, "data": ..., "error": ...}
+  — tests unwrap via r.json()["data"] for happy paths.
 
 Run:
     pytest tests/test_api.py -v
@@ -68,17 +70,11 @@ VALID_SYMBOLS = {"NABIL", "NICA"}
 @pytest.fixture(scope="module")
 def client():
     """Shared TestClient for the whole module."""
-    # Disable lifespan so we skip the warm-up network calls.
     with TestClient(app, raise_server_exceptions=True) as c:
         yield c
 
 
 def _patch_svc(**overrides):
-    """
-    Return a dict of AsyncMock patches for every public service function.
-
-    ``overrides`` lets individual tests replace specific mocks.
-    """
     defaults = {
         # market
         "get_market_status":   AsyncMock(return_value=SAMPLE_MARKET_STATUS),
@@ -119,16 +115,27 @@ def _patch_svc(**overrides):
 # ---------------------------------------------------------------------------
 
 def with_svc(mocks: dict):
-    """Patch every key in *mocks* inside ``app.services.nepse``.
-
-    Routes call ``svc.<fn>()`` where ``svc`` is the module object, so patching
-    the source module is sufficient — no need to also patch each importer.
-    """
     return patch.multiple("app.services.nepse", **{fn: mock for fn, mock in mocks.items()})
 
 
+def _ok(r):
+    """Assert envelope success and return the unwrapped data payload."""
+    body = r.json()
+    assert body["success"] is True
+    assert body["error"] is None
+    return body["data"]
+
+
+def _err(r):
+    """Assert envelope failure and return the error string."""
+    body = r.json()
+    assert body["success"] is False
+    assert body["data"] is None
+    return body["error"]
+
+
 # ---------------------------------------------------------------------------
-# System endpoints
+# System endpoints  (no envelope — /health and / return raw dicts)
 # ---------------------------------------------------------------------------
 
 class TestSystem:
@@ -163,7 +170,8 @@ class TestMarket:
         with with_svc(mocks):
             r = client.get("/api/v1/market/status")
         assert r.status_code == 200
-        assert r.json()["isOpen"] == "OPEN"
+        data = _ok(r)
+        assert data["isOpen"] == "OPEN"
 
     def test_status_502_on_service_failure(self, client):
         mocks = _patch_svc(get_market_status=AsyncMock(side_effect=RuntimeError("upstream down")))
@@ -176,13 +184,15 @@ class TestMarket:
         with with_svc(mocks):
             r = client.get("/api/v1/market/summary")
         assert r.status_code == 200
-        assert "totalTurnover" in r.json()
+        data = _ok(r)
+        assert "totalTurnover" in data
 
     def test_supply_demand_happy(self, client):
         mocks = _patch_svc()
         with with_svc(mocks):
             r = client.get("/api/v1/market/supply-demand")
         assert r.status_code == 200
+        _ok(r)
 
 
 # ---------------------------------------------------------------------------
@@ -195,7 +205,7 @@ class TestPrices:
         with with_svc(mocks):
             r = client.get("/api/v1/prices/today")
         assert r.status_code == 200
-        data = r.json()
+        data = _ok(r)
         assert isinstance(data, list)
         assert data[0]["symbol"] == "NABIL"
 
@@ -218,12 +228,14 @@ class TestPrices:
         with with_svc(mocks):
             r = client.get("/api/v1/prices/live")
         assert r.status_code == 200
+        _ok(r)
 
     def test_price_volume_happy(self, client):
         mocks = _patch_svc()
         with with_svc(mocks):
             r = client.get("/api/v1/prices/volume")
         assert r.status_code == 200
+        _ok(r)
 
     @pytest.mark.parametrize("sub", ["gainers", "losers", "turnover", "trade", "transaction"])
     def test_top_lists_happy(self, client, sub):
@@ -231,6 +243,7 @@ class TestPrices:
         with with_svc(mocks):
             r = client.get(f"/api/v1/prices/top/{sub}")
         assert r.status_code == 200
+        _ok(r)
 
     def test_top_gainers_502(self, client):
         mocks = _patch_svc(get_top_gainers=AsyncMock(side_effect=Exception("timeout")))
@@ -249,20 +262,23 @@ class TestIndices:
         with with_svc(mocks):
             r = client.get("/api/v1/indices/nepse")
         assert r.status_code == 200
-        assert r.json()["index"] == "NEPSE"
+        data = _ok(r)
+        assert data["index"] == "NEPSE"
 
     def test_subindices_happy(self, client):
         mocks = _patch_svc()
         with with_svc(mocks):
             r = client.get("/api/v1/indices/subindices")
         assert r.status_code == 200
-        assert isinstance(r.json(), list)
+        data = _ok(r)
+        assert isinstance(data, list)
 
     def test_index_graph_valid(self, client):
         mocks = _patch_svc()
         with with_svc(mocks):
             r = client.get("/api/v1/indices/graph/banking")
         assert r.status_code == 200
+        _ok(r)
 
     def test_index_graph_invalid_name_400(self, client):
         mocks = _patch_svc(
@@ -271,7 +287,7 @@ class TestIndices:
         with with_svc(mocks):
             r = client.get("/api/v1/indices/graph/invalid_xyz")
         assert r.status_code == 400
-        assert "invalid_xyz" in r.json()["detail"]
+        assert "invalid_xyz" in _err(r)
 
     def test_index_graph_502(self, client):
         mocks = _patch_svc(get_index_graph=AsyncMock(side_effect=RuntimeError("upstream")))
@@ -290,14 +306,16 @@ class TestSecurities:
         with with_svc(mocks):
             r = client.get("/api/v1/securities/companies")
         assert r.status_code == 200
-        assert r.json()[0]["symbol"] == "NABIL"
+        data = _ok(r)
+        assert data[0]["symbol"] == "NABIL"
 
     def test_security_list_happy(self, client):
         mocks = _patch_svc()
         with with_svc(mocks):
             r = client.get("/api/v1/securities/list")
         assert r.status_code == 200
-        assert len(r.json()) == 2
+        data = _ok(r)
+        assert len(data) == 2
 
     def test_security_list_csv(self, client):
         mocks = _patch_svc()
@@ -305,7 +323,6 @@ class TestSecurities:
             r = client.get("/api/v1/securities/list?fmt=csv")
         assert r.status_code == 200
         assert r.headers["content-type"].startswith("text/csv")
-        # CSV must contain the header and the symbol
         assert "symbol" in r.text
         assert "NABIL" in r.text
 
@@ -314,7 +331,8 @@ class TestSecurities:
         with with_svc(mocks):
             r = client.get("/api/v1/securities/sectors")
         assert r.status_code == 200
-        assert "Commercial Banks" in r.json()
+        data = _ok(r)
+        assert "Commercial Banks" in data
 
     def test_validate_known_symbol(self, client):
         with (
@@ -323,7 +341,7 @@ class TestSecurities:
         ):
             r = client.get("/api/v1/securities/validate/NABIL")
         assert r.status_code == 200
-        body = r.json()
+        body = _ok(r)
         assert body["is_valid"] is True
         assert body["symbol"] == "NABIL"
         assert body["suggestions"] == []
@@ -335,7 +353,7 @@ class TestSecurities:
         ):
             r = client.get("/api/v1/securities/validate/NABIL123")
         assert r.status_code == 200
-        body = r.json()
+        body = _ok(r)
         assert body["is_valid"] is False
         assert "NABIL" in body["suggestions"]
 
@@ -344,7 +362,8 @@ class TestSecurities:
         with with_svc(mocks):
             r = client.get("/api/v1/securities/NABIL")
         assert r.status_code == 200
-        assert r.json()["symbol"] == "NABIL"
+        data = _ok(r)
+        assert data["symbol"] == "NABIL"
 
     def test_company_details_404_bad_symbol(self, client):
         mocks = _patch_svc(
@@ -353,7 +372,7 @@ class TestSecurities:
         with with_svc(mocks):
             r = client.get("/api/v1/securities/BADTICKER")
         assert r.status_code == 404
-        assert "BADTICKER" in r.json()["detail"]
+        assert "BADTICKER" in _err(r)
 
     def test_company_details_502(self, client):
         mocks = _patch_svc(
@@ -368,6 +387,7 @@ class TestSecurities:
         with with_svc(mocks):
             r = client.get("/api/v1/securities/NABIL/graph")
         assert r.status_code == 200
+        _ok(r)
 
     def test_scrip_graph_404_bad_symbol(self, client):
         mocks = _patch_svc(
@@ -382,7 +402,7 @@ class TestSecurities:
         with with_svc(mocks):
             r = client.get("/api/v1/securities/NABIL/history")
         assert r.status_code == 200
-        data = r.json()
+        data = _ok(r)
         assert isinstance(data, list)
         assert data[0]["close"] == 1020
 
@@ -408,7 +428,8 @@ class TestSecurities:
         with with_svc(mocks):
             r = client.get("/api/v1/securities/NABIL/depth")
         assert r.status_code == 200
-        assert "buy" in r.json()
+        data = _ok(r)
+        assert "buy" in data
 
     def test_market_depth_404_bad_symbol(self, client):
         mocks = _patch_svc(
@@ -418,14 +439,12 @@ class TestSecurities:
             r = client.get("/api/v1/securities/FAKE/depth")
         assert r.status_code == 404
 
-    # -- bulk endpoint --------------------------------------------------------
-
     def test_bulk_history_happy(self, client):
         mocks = _patch_svc()
         with with_svc(mocks):
             r = client.get("/api/v1/securities/history/bulk?symbols=NABIL,NICA")
         assert r.status_code == 200
-        body = r.json()
+        body = _ok(r)
         assert "NABIL" in body
         assert "NICA" in body
         assert isinstance(body["NABIL"], list)
@@ -436,7 +455,6 @@ class TestSecurities:
             r = client.get("/api/v1/securities/history/bulk?symbols=NABIL,NICA&fmt=csv")
         assert r.status_code == 200
         assert r.headers["content-type"].startswith("text/csv")
-        # Long-format CSV must have a symbol column
         assert "symbol" in r.text
         assert "NABIL" in r.text
 
@@ -448,7 +466,7 @@ class TestSecurities:
 
     def test_bulk_history_too_many_symbols_400(self, client):
         mocks = _patch_svc()
-        symbols = ",".join([f"SYM{i:02d}" for i in range(51)])  # 51 symbols
+        symbols = ",".join([f"SYM{i:02d}" for i in range(51)])
         with with_svc(mocks):
             r = client.get(f"/api/v1/securities/history/bulk?symbols={symbols}")
         assert r.status_code == 400
@@ -472,7 +490,8 @@ class TestFloorsheet:
         with with_svc(mocks):
             r = client.get("/api/v1/floorsheet/")
         assert r.status_code == 200
-        assert isinstance(r.json(), list)
+        data = _ok(r)
+        assert isinstance(data, list)
 
     def test_floor_sheet_502(self, client):
         mocks = _patch_svc(get_floor_sheet=AsyncMock(side_effect=Exception("db error")))
@@ -485,6 +504,7 @@ class TestFloorsheet:
         with with_svc(mocks):
             r = client.get("/api/v1/floorsheet/NABIL")
         assert r.status_code == 200
+        _ok(r)
 
     def test_floor_sheet_of_404_bad_symbol(self, client):
         mocks = _patch_svc(

@@ -130,7 +130,7 @@ def root():
         "description": "Unofficial reverse-engineered NEPSE data API",
         "version":     "1.0.0",
         "docs":        "/docs",
-        
+
         "status":      "ok",
     }
 
