@@ -26,9 +26,11 @@ jobs:
           cache: pip
 
       - name: Install dependencies
+        working-directory: server
         run: pip install -r requirements.txt pytest httpx
 
       - name: Run unit tests (auth + API routes)
+        working-directory: server
         run: python -m pytest tests/test_auth.py tests/test_api.py -v --tb=short
 
   lint:
@@ -47,7 +49,7 @@ jobs:
         run: pip install ruff
 
       - name: Ruff check
-        # ruff.toml at repo root configures target-version, select, and ignore
+        working-directory: server
         run: ruff check app/ tests/
 
   docker:
@@ -58,16 +60,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Copy nepseman_api into server for Docker build
+        run: cp -r nepseman_api server/nepseman_api
+
       - name: Build Docker image
+        working-directory: server
         run: docker build -t nepse-scrapper:ci .
 
       - name: Verify image starts
         run: |
           docker run -d --name nepse-test -p 8000:8000 nepse-scrapper:ci
           sleep 5
-          # Health check — will show 'last_sync_at: null' since no Nepal IP,
-          # but the service should start and respond cleanly
           docker logs nepse-test
-          # 200 means server is up; geo-block only affects data routes
           curl -sf http://localhost:8000/health | python3 -m json.tool
           docker stop nepse-test

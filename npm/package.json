@@ -1,0 +1,32 @@
+{
+  "name": "nepseman-api",
+  "version": "1.0.0",
+  "description": "Unofficial async JavaScript/TypeScript client for Nepal Stock Exchange (NEPSE)",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "node --test dist/tests/",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["nepse", "nepal", "stock", "exchange", "finance", "nepalstock"],
+  "author": "Dipal Katuwal <dipalkatuwal.com.np>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dipalkatuwal/nepse-client"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
