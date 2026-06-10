@@ -7,6 +7,61 @@
 
 ---
 
+## Quick Start
+
+### Option 1 — Use the live hosted API (no setup needed)
+
+Base URL: **`https://nepseman-api-production.up.railway.app`**
+
+```bash
+# Market status
+curl https://nepseman-api-production.up.railway.app/api/v1/market/status
+
+# Today's prices
+curl https://nepseman-api-production.up.railway.app/api/v1/prices/today
+
+# Top gainers
+curl https://nepseman-api-production.up.railway.app/api/v1/prices/top/gainers
+
+# NEPSE index
+curl https://nepseman-api-production.up.railway.app/api/v1/indices/nepse
+
+# Company details
+curl https://nepseman-api-production.up.railway.app/api/v1/securities/NABIL
+```
+
+Interactive docs: **`https://nepseman-api-production.up.railway.app/docs`**
+
+---
+
+### Option 2 — Install and run locally 
+
+**Via pip (from GitHub):**
+
+```bash
+pip install git+https://github.com/dipalkatuwal/nepseman-api.git
+```
+
+Then run:
+
+```bash
+nepseman-api
+# → http://localhost:8000
+```
+
+**Via Docker:**
+
+```bash
+git clone https://github.com/dipalkatuwal/nepseman-api.git
+cd nepseman-api
+cp .env.example .env
+docker compose up -d
+```
+
+API available at `http://localhost:8000` · Docs at `http://localhost:8000/docs`
+
+---
+
 ## Features
 
 - **Zero third-party NEPSE dependency** — auth implemented from scratch using NEPSE's own WASM binary
