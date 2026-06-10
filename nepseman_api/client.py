@@ -134,7 +134,7 @@ class NepseClient:
         return result or []
 
     async def live_market(self) -> Any:
-        """Return live market ticker data."""
+        """Return live market ticker data (only available during trading hours)."""
         return await self._session.get(_GET["live_market"])
 
     async def price_volume(self) -> Any:
@@ -222,18 +222,23 @@ class NepseClient:
     # ── top lists ──────────────────────────────────────────────────────────────
 
     async def top_gainers(self) -> List[Dict]:
+        """Return top gaining stocks."""
         return await self._session.get(_GET["top_gainers"]) or []
 
     async def top_losers(self) -> List[Dict]:
+        """Return top losing stocks."""
         return await self._session.get(_GET["top_losers"]) or []
 
     async def top_turnover(self) -> List[Dict]:
+        """Return top stocks by turnover."""
         return await self._session.get(_GET["top_turnover"]) or []
 
     async def top_trade(self) -> List[Dict]:
+        """Return top traded stocks."""
         return await self._session.get(_GET["top_trade"]) or []
 
     async def top_transaction(self) -> List[Dict]:
+        """Return top stocks by transaction count."""
         return await self._session.get(_GET["top_transaction"]) or []
 
     # ── indices ────────────────────────────────────────────────────────────────
@@ -306,7 +311,7 @@ class NepseClient:
     # ── floorsheet ─────────────────────────────────────────────────────────────
 
     async def floor_sheet(self, page: int = 0, size: int = 500) -> Any:
-        """Return market-wide floorsheet (trade records)."""
+        """Return market-wide floorsheet (all trade records)."""
         result = await self._session.post(
             _POST["floor_sheet"],
             payload_type="floor",
@@ -317,16 +322,49 @@ class NepseClient:
         return result or []
 
     async def floor_sheet_of(
-        self, symbol: str, business_date: Optional[str] = None, size: int = 500
-    ) -> Any:
-        """Return floorsheet records for a specific company."""
-        sid = await self._symbol_id(symbol)
+        self,
+        symbol: str,
+        business_date: Optional[str] = None,
+        size: int = 500,
+    ) -> List[Dict]:
+        """
+        Return floorsheet records for a specific symbol.
+
+        NEPSE does not expose a reliable per-symbol floorsheet endpoint.
+        This method fetches the general floorsheet and filters client-side,
+        which is the same approach the NEPSE website uses.
+
+        Args:
+            symbol:        Ticker symbol e.g. "NABIL".
+            business_date: "YYYY-MM-DD". Defaults to today.
+            size:          Max rows to fetch before filtering (default 500).
+        """
+        sym = symbol.upper()
         bd  = business_date or date.today().strftime("%Y-%m-%d")
+
         result = await self._session.post(
-            _POST["company_floorsheet"] + str(sid),
+            _POST["floor_sheet"],
             payload_type="floor",
-            extra_params={"businessDate": bd, "size": str(size), "sort": "contractid,desc"},
+            extra_params={
+                "businessDate": bd,
+                "size": str(size),
+                "sort": "contractid,desc",
+            },
         )
+
+        if not result:
+            return []
+
+        # unwrap envelope
         if isinstance(result, dict) and "floorsheets" in result:
-            return result["floorsheets"].get("content", result)
-        return result or []
+            content = result["floorsheets"].get("content", [])
+        elif isinstance(result, dict):
+            content = result.get("content", [])
+        else:
+            content = result
+
+        # filter by symbol client-side
+        return [
+            row for row in content
+            if str(row.get("stockSymbol", "")).upper() == sym
+        ]

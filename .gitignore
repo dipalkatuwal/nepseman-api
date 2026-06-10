@@ -1,4 +1,4 @@
-# Python
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *.pyo
@@ -6,31 +6,54 @@ __pycache__/
 *.so
 *.egg
 *.egg-info/
-dist/
-build/
 .eggs/
 .Python
 
-# Virtual environments
+# ── Build artifacts ───────────────────────────────────────────────────────────
+dist/
+build/
+*.whl
+*.tar.gz
+
+# ── Virtual environments ──────────────────────────────────────────────────────
 venv/
 env/
 .venv/
 .env/
 
-# Environment variables
+# ── Environment variables ─────────────────────────────────────────────────────
 .env
+!.env.example
 
-# IDE
+# ── IDE ───────────────────────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# OS
+# ── OS ────────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 
-# Test cache
+# ── Test & coverage ───────────────────────────────────────────────────────────
 .pytest_cache/
 .coverage
 htmlcov/
+
+# ── Linters & type checkers ───────────────────────────────────────────────────
+.ruff_cache/
+.mypy_cache/
+
+# ── Node / npm ────────────────────────────────────────────────────────────────
+node_modules/
+npm/dist/
+npm/*.js
+npm/*.d.ts
+
+# ── Database ──────────────────────────────────────────────────────────────────
+*.db
+*.sqlite3
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/

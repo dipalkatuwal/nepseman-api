@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nepseman-api"
+version = "1.0.0"
+description = "Unofficial async Python client for Nepal Stock Exchange (NEPSE)"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+keywords = ["nepse", "nepal", "stock", "market", "finance", "api"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Office/Business :: Financial",
+    "Framework :: AsyncIO",
+]
+dependencies = [
+    "httpx>=0.27.0",
+    "wasmtime>=45.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/dipalkatuwal/nepseman-api"
+Repository = "https://github.com/dipalkatuwal/nepseman-api"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["nepseman_api*"]
+
+[tool.setuptools.package-data]
+"nepseman_api" = ["*.wasm"]
