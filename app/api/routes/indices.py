@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
+from app.models.responses import ok
 from app.services import nepse as svc
 
 router = APIRouter(prefix="/indices", tags=["Indices"])
@@ -8,7 +9,7 @@ router = APIRouter(prefix="/indices", tags=["Indices"])
 @router.get("/nepse")
 async def nepse_index():
     try:
-        return await svc.get_nepse_index()
+        return ok(await svc.get_nepse_index())
     except Exception as e:
         raise HTTPException(502, str(e))
 
@@ -16,7 +17,7 @@ async def nepse_index():
 @router.get("/subindices")
 async def nepse_subindices():
     try:
-        return await svc.get_nepse_subindices()
+        return ok(await svc.get_nepse_subindices())
     except Exception as e:
         raise HTTPException(502, str(e))
 
@@ -30,7 +31,7 @@ async def index_graph(index_name: str = "nepse"):
                 non_life_insurance | others | trading
     """
     try:
-        return await svc.get_index_graph(index_name)
+        return ok(await svc.get_index_graph(index_name))
     except ValueError as e:
         raise HTTPException(400, str(e))
     except Exception as e:

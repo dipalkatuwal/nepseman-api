@@ -12,6 +12,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -21,6 +22,7 @@ from app.api.routes import indices, market, meta, prices, securities
 from app.api.routes.ws import router as ws_router
 from app.core.cache import cache
 from app.core.config import settings
+from app.models.responses import err
 
 # ── logging ───────────────────────────────────────────────────────────────────
 
@@ -80,6 +82,12 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# ── Global HTTPException handler → unified envelope ───────────────────────────
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return err(exc.detail, exc.status_code)
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
@@ -122,8 +130,7 @@ def root():
         "description": "Unofficial reverse-engineered NEPSE data API",
         "version":     "1.0.0",
         "docs":        "/docs",
-        "redoc":       "/redoc",
-        "ws":          "/ws",
+        
         "status":      "ok",
     }
 

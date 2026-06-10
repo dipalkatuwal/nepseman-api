@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.core import symbols as sym
+from app.models.responses import ok
 from app.services import nepse as svc
 
 router = APIRouter(prefix="/securities", tags=["Securities"])
@@ -31,7 +32,7 @@ def _to_csv(data: list, filename: str) -> StreamingResponse:
 @router.get("/companies")
 async def company_list():
     try:
-        return await svc.get_company_list()
+        return ok(await svc.get_company_list())
     except Exception as e:
         raise HTTPException(502, str(e))
 
@@ -42,7 +43,7 @@ async def security_list(fmt: Optional[str] = None):
         data = await svc.get_security_list()
         if fmt == "csv":
             return _to_csv(data, "securities.csv")
-        return data
+        return ok(data)
     except Exception as e:
         raise HTTPException(502, str(e))
 
@@ -50,7 +51,7 @@ async def security_list(fmt: Optional[str] = None):
 @router.get("/sectors")
 async def sector_scrips():
     try:
-        return await svc.get_sector_scrips()
+        return ok(await svc.get_sector_scrips())
     except Exception as e:
         raise HTTPException(502, str(e))
 
@@ -61,11 +62,11 @@ async def sector_scrips():
 async def validate_symbol(symbol: str):
     valid = await sym.is_valid_symbol(symbol)
     suggestions = [] if valid else await sym.get_suggestions(symbol)
-    return {
+    return ok({
         "symbol":      symbol.upper(),
         "is_valid":    valid,
         "suggestions": suggestions,
-    }
+    })
 
 
 # ── symbol sub-routes ─────────────────────────────────────────────────────────
@@ -73,7 +74,7 @@ async def validate_symbol(symbol: str):
 @router.get("/{symbol}/graph")
 async def daily_scrip_graph(symbol: str):
     try:
-        return await svc.get_daily_scrip_graph(symbol)
+        return ok(await svc.get_daily_scrip_graph(symbol))
     except ValueError as e:
         raise HTTPException(404, str(e))
     except Exception as e:
@@ -92,7 +93,7 @@ async def price_history(
         data = await svc.get_price_history(symbol, start_date, end_date, size)
         if fmt == "csv":
             return _to_csv(data if isinstance(data, list) else [], f"{symbol}_history.csv")
-        return data
+        return ok(data)
     except ValueError as e:
         raise HTTPException(404, str(e))
     except Exception as e:
@@ -102,7 +103,7 @@ async def price_history(
 @router.get("/{symbol}/depth")
 async def market_depth(symbol: str):
     try:
-        return await svc.get_market_depth(symbol)
+        return ok(await svc.get_market_depth(symbol))
     except ValueError as e:
         raise HTTPException(404, str(e))
     except Exception as e:
@@ -114,7 +115,7 @@ async def market_depth(symbol: str):
 @router.get("/{symbol}")
 async def company_details(symbol: str):
     try:
-        return await svc.get_company_details(symbol)
+        return ok(await svc.get_company_details(symbol))
     except ValueError as e:
         raise HTTPException(404, str(e))
     except Exception as e:
@@ -143,9 +144,6 @@ async def bulk_price_history(
 
     Example: `/api/v1/securities/history/bulk?symbols=NABIL,NICA,SCB&start_date=2024-01-01`
     """
-    import csv
-    import io
-
     symbol_list = [s.strip().upper() for s in symbols.split(",") if s.strip()]
     if not symbol_list:
         raise HTTPException(400, "Provide at least one symbol.")
@@ -164,7 +162,7 @@ async def bulk_price_history(
         raise HTTPException(502, str(e))
 
     if fmt != "csv":
-        return data
+        return ok(data)
 
     # ── CSV: long format — symbol column prepended ────────────────────────────
     rows = []

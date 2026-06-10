@@ -1,12 +1,21 @@
-FROM python:3.11-slim
+# ── Stage 1: builder ─────────────────────────────────────────────────────────
+FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
-# Install dependencies first (layer caching)
+# Install deps into a prefix we can copy wholesale
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Copy source
+# ── Stage 2: runner ──────────────────────────────────────────────────────────
+FROM python:3.11-slim AS runner
+
+WORKDIR /app
+
+# Copy only the installed packages from builder — no pip, no build tools
+COPY --from=builder /install /usr/local
+
+# Copy application source
 COPY . .
 
 # Non-root user for security

@@ -189,6 +189,55 @@ python scripts/test_all.py
 
 ---
 
+
+## Deployment
+
+### Run Alembic migrations before (re)deploying
+
+Always migrate the database before rolling out a new image so schema changes
+are applied before the app starts serving traffic:
+
+```bash
+docker compose run --rm nepse-api alembic upgrade head
+```
+
+This runs in a throwaway container against the live `postgres` service and
+exits cleanly when done.
+
+### Zero-downtime redeploy
+
+Rebuild and restart only the API container without touching postgres or nginx:
+
+```bash
+docker compose up -d --no-deps --build nepse-api
+```
+
+`--no-deps` prevents Compose from restarting dependency services (postgres,
+nginx), so the database stays up and in-flight connections are unaffected.
+`--build` rebuilds the image from the current source before starting the
+new container. Docker Compose stops the old container and starts the new one
+with a brief gap (single-instance downtime); for true zero-downtime you would
+front this with nginx upstream health checks and run two API replicas.
+
+### Crash recovery
+
+Both `nepse-api` and `postgres` are configured with `restart: unless-stopped`.
+If either crashes, Docker restarts it automatically without manual intervention.
+Combined with the healthcheck (`/health` polled every 30 s), Docker will also
+restart the container if it becomes unresponsive.
+
+### Full stack bring-up
+
+```bash
+# First run — build image, migrate, start everything
+docker compose up -d --build
+docker compose run --rm nepse-api alembic upgrade head
+
+# Subsequent deploys
+docker compose run --rm nepse-api alembic upgrade head
+docker compose up -d --no-deps --build nepse-api
+```
+
 ## Disclaimer
 
 This project is **unofficial** and **not affiliated with NEPSE** or nepalstock.com.np in any way. It reverse-engineers the public-facing web interface for educational and personal use. Data accuracy is not guaranteed. Do not use in production trading systems.

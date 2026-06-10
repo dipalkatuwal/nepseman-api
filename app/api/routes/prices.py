@@ -14,6 +14,7 @@ from fastapi.responses import StreamingResponse
 
 from app.db import repository as repo
 from app.db.database import get_db
+from app.models.responses import ok
 from app.services import nepse as svc
 
 logger = logging.getLogger(__name__)
@@ -58,7 +59,7 @@ async def today_price(
 
         if fmt == "csv":
             return _to_csv(data, "today_price.csv")
-        return data
+        return ok(data)
 
     except Exception as e:
         raise HTTPException(502, str(e))
@@ -67,7 +68,7 @@ async def today_price(
 @router.get("/live")
 async def live_market():
     try:
-        return await svc.get_live_market()
+        return ok(await svc.get_live_market())
     except Exception as e:
         raise HTTPException(502, str(e))
 
@@ -75,7 +76,7 @@ async def live_market():
 @router.get("/volume")
 async def price_volume():
     try:
-        return await svc.get_price_volume()
+        return ok(await svc.get_price_volume())
     except Exception as e:
         raise HTTPException(502, str(e))
 
@@ -83,7 +84,7 @@ async def price_volume():
 @router.get("/top/gainers")
 async def top_gainers():
     try:
-        return await svc.get_top_gainers()
+        return ok(await svc.get_top_gainers())
     except Exception as e:
         raise HTTPException(502, str(e))
 
@@ -91,7 +92,7 @@ async def top_gainers():
 @router.get("/top/losers")
 async def top_losers():
     try:
-        return await svc.get_top_losers()
+        return ok(await svc.get_top_losers())
     except Exception as e:
         raise HTTPException(502, str(e))
 
@@ -99,7 +100,7 @@ async def top_losers():
 @router.get("/top/turnover")
 async def top_turnover():
     try:
-        return await svc.get_top_turnover()
+        return ok(await svc.get_top_turnover())
     except Exception as e:
         raise HTTPException(502, str(e))
 
@@ -107,7 +108,7 @@ async def top_turnover():
 @router.get("/top/trade")
 async def top_trade():
     try:
-        return await svc.get_top_trade()
+        return ok(await svc.get_top_trade())
     except Exception as e:
         raise HTTPException(502, str(e))
 
@@ -115,12 +116,23 @@ async def top_trade():
 @router.get("/top/transaction")
 async def top_transaction():
     try:
-        return await svc.get_top_transaction()
+        return ok(await svc.get_top_transaction())
     except Exception as e:
         raise HTTPException(502, str(e))
 
 
 # ── PostgreSQL query endpoints ────────────────────────────────────────────────
+
+@router.get("/snapshots/summary")
+async def get_snapshot_summary():
+    """Per-symbol stats: total_snapshots, latest_close, latest_date."""
+    try:
+        async with get_db() as db:
+            rows = await repo.get_snapshot_summary(db)
+        return ok(rows)
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
 
 @router.get("/snapshots")
 async def get_snapshots(
@@ -142,7 +154,7 @@ async def get_snapshots(
                 limit=limit,
                 offset=offset,
             )
-        return {
+        return ok({
             "count": len(rows),
             "limit": limit,
             "offset": offset,
@@ -164,7 +176,7 @@ async def get_snapshots(
                 }
                 for r in rows
             ],
-        }
+        })
     except Exception as e:
         raise HTTPException(500, str(e))
 
@@ -177,14 +189,14 @@ async def get_latest_snapshot(symbol: str):
             row = await repo.get_latest_snapshot(db, symbol)
         if not row:
             raise HTTPException(404, f"No snapshot found for symbol '{symbol.upper()}'.")
-        return {
+        return ok({
             "symbol": row.symbol,
             "security_name": row.security_name,
             "closing_price": row.closing_price,
             "percentage_change": row.percentage_change,
             "business_date": row.business_date,
             "scraped_at": row.scraped_at.isoformat(),
-        }
+        })
     except HTTPException:
         raise
     except Exception as e:

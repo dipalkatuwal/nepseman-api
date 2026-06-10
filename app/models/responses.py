@@ -1,14 +1,31 @@
 """
 models/responses.py
 -------------------
-Pydantic models for API responses.
-All fields are Optional so partial NEPSE responses don't crash deserialization.
+Pydantic models for API responses AND the unified response envelope helpers.
+
+All routes return:
+  {"success": true,  "data": <payload>, "error": null}
+  {"success": false, "data": null,       "error": "message"}
 """
 
 from typing import Any, Optional
 
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+# ── Envelope helpers ──────────────────────────────────────────────────────────
+
+def ok(data: Any) -> JSONResponse:
+    """Wrap a successful payload in the standard envelope."""
+    return JSONResponse({"success": True, "data": data, "error": None})
+
+
+def err(msg: str, status: int = 400) -> JSONResponse:
+    """Wrap an error message in the standard envelope."""
+    return JSONResponse({"success": False, "data": None, "error": msg}, status_code=status)
+
+
+# ── Pydantic models (unchanged) ───────────────────────────────────────────────
 
 class MarketStatus(BaseModel):
     is_open: bool
