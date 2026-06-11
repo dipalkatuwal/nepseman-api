@@ -28,6 +28,7 @@ dependencies = [
 Homepage = "https://github.com/dipalkatuwal/nepseman-api"
 Repository = "https://github.com/dipalkatuwal/nepseman-api"
 
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["nepseman_api*"]

@@ -3,13 +3,17 @@
 > **Unofficial, reverse-engineered REST API for Nepal Stock Exchange (NEPSE) market data.**
 > Not affiliated with NEPSE or nepalstock.com.np. Use at your own risk.
 
+[![PyPI version](https://img.shields.io/pypi/v/nepseman-api)](https://pypi.org/project/nepseman-api)
+[![npm version](https://img.shields.io/npm/v/nepseman-api)](https://www.npmjs.com/package/nepseman-api)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 This monorepo contains three things:
 
 | Package | Description | Install |
 |---------|-------------|---------|
 | `server/` | FastAPI server — self-host the full REST API | Docker / Railway |
 | `nepseman_api/` | Python client library | `pip install nepseman-api` |
-| `npm/` | TypeScript client library | `npm install nepseman-api` |
+| `npm/` | TypeScript/JavaScript client library | `npm install nepseman-api` |
 
 ---
 
@@ -52,7 +56,7 @@ asyncio.run(main())
 
 ---
 
-## TypeScript Client
+## TypeScript/JavaScript Client
 
 ```bash
 npm install nepseman-api
@@ -62,8 +66,25 @@ npm install nepseman-api
 import { NepseClient } from "nepseman-api";
 
 const nepse = new NepseClient();
+
+// Market status
 const status = await nepse.marketStatus();
+console.log(status.isOpen); // "OPEN" | "CLOSE"
+
+// Today's prices
+const prices = await nepse.todayPrice();
+console.log(prices.slice(0, 3));
+
+// Price history
+const history = await nepse.priceHistory("NABIL");
+console.log(history.slice(0, 5));
+
+// Top gainers
+const gainers = await nepse.topGainers();
+console.log(gainers.slice(0, 3));
 ```
+
+→ Full docs: [npmjs.com/package/nepseman-api](https://www.npmjs.com/package/nepseman-api)
 
 ---
 
