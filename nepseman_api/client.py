@@ -330,14 +330,15 @@ class NepseClient:
         """
         Return floorsheet records for a specific symbol.
 
-        NEPSE does not expose a reliable per-symbol floorsheet endpoint.
-        This method fetches the general floorsheet and filters client-side,
-        which is the same approach the NEPSE website uses.
+        Note: Returns matches from the first `size` floorsheet records only.
+        NEPSE does not expose a per-symbol endpoint — this method fetches
+        the general floorsheet and filters client-side. For complete results,
+        iterate floor_sheet(page=N) and filter manually across pages.
 
         Args:
             symbol:        Ticker symbol e.g. "NABIL".
             business_date: "YYYY-MM-DD". Defaults to today.
-            size:          Max rows to fetch before filtering (default 500).
+            size:          Number of floorsheet rows to scan (default 500).
         """
         sym = symbol.upper()
         bd  = business_date or date.today().strftime("%Y-%m-%d")

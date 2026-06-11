@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nepseman-api"
-version = "1.0.0"
+version = "1.0.1"
 description = "Unofficial async Python client for Nepal Stock Exchange (NEPSE)"
-readme = "README.md"
+readme = "nepseman_api/README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.11"
 keywords = ["nepse", "nepal", "stock", "market", "finance", "api"]
