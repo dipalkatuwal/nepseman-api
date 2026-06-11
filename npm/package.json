@@ -10,17 +10,24 @@
     "src"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"require('fs').copyFileSync('src/nepse.wasm', 'dist/nepse.wasm')\"",
     "dev": "tsc --watch",
     "test": "node --test dist/tests/",
     "prepublishOnly": "npm run build"
   },
-  "keywords": ["nepse", "nepal", "stock", "exchange", "finance", "nepalstock"],
+  "keywords": [
+    "nepse",
+    "nepal",
+    "stock",
+    "exchange",
+    "finance",
+    "nepalstock"
+  ],
   "author": "Dipal Katuwal <dipalkatuwal.com.np>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dipalkatuwal/nepse-client"
+    "url": "git+https://github.com/dipalkatuwal/nepseman-api.git"
   },
   "devDependencies": {
     "typescript": "^5.4.0",

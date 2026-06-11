@@ -5,6 +5,7 @@
  */
 
 import { TokenParser, calculatePayloadId, type RawTokenResponse, type PayloadType } from "./auth.js";
+process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
 
 export const GET_ENDPOINTS = {
   authenticate:         "/api/authenticate/prove",

@@ -62,7 +62,7 @@ export class TokenParser {
       const wasmPath = wasmBinary ?? path.join(__dirname, "nepse.wasm");
       buf = fs.readFileSync(wasmPath);
     }
-    const module = await WebAssembly.compile(buf);
+    const module = await WebAssembly.compile(new Uint8Array(buf));
     const instance = await WebAssembly.instantiate(module, {});
     this.exports = instance.exports as unknown as WasmExports;
   }
