@@ -11,10 +11,10 @@ import time
 from typing import Any, Dict, Optional
 
 import httpx
-
-from app.core.config import settings
 from nepseman_api.auth import PayloadParser, TokenParser
 from nepseman_api.session import GET_ENDPOINTS
+
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 

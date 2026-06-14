@@ -35,3 +35,6 @@ pytest
 pytest-asyncio
 httpx
 ruff
+
+#nepse-clint
+nepseman-api==1.0.1

@@ -60,9 +60,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Copy nepseman_api into server for Docker build
-        run: cp -r nepseman_api server/nepseman_api
-
       - name: Build Docker image
         working-directory: server
         run: docker build -t nepse-scrapper:ci .
